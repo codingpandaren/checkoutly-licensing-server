@@ -41,6 +41,12 @@ class LicenseController extends AbstractController
 
         $domain = $normalizer->normalize((string) $request->request->get('domain'));
 
+        if (License::isLocalDomain($domain)) {
+            $this->addFlash('success', 'Local and development stores (like localhost) already work automatically. You only need to register your live store domain here.');
+
+            return $this->redirectToRoute('app_license_show', ['id' => $license->getId()]);
+        }
+
         if (!$this->isValidDomain($domain)) {
             $this->addFlash('error', 'Please enter a valid store domain, e.g. yourstore.com.');
 

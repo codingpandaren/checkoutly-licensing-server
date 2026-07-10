@@ -8,6 +8,7 @@ use App\Entity\License;
 use App\Entity\User;
 use App\Repository\LicenseRepository;
 use App\Repository\UserRepository;
+use Stripe\Subscription;
 
 /**
  * Turns Stripe subscription events into License state. One Stripe subscription
@@ -28,14 +29,14 @@ class SubscriptionService
     /**
      * Issue (or refresh) the license for a completed checkout / active subscription.
      */
-    public function provision(string $customerId, string $subscriptionId, string $stripeStatus, string $tier = 'pro'): ?License
+    public function provision(string $customerId, Subscription $subscription, string $tier = 'pro'): ?License
     {
         $user = $this->users->findOneByStripeCustomerId($customerId);
         if (!$user instanceof User) {
             return null;
         }
 
-        $license = $this->licenses->findOneByStripeSubscriptionId($subscriptionId);
+        $license = $this->licenses->findOneByStripeSubscriptionId($subscription->id);
         if (!$license instanceof License) {
             $issued = $this->signer->issue($user->getEmail(), $tier, 0, '');
             $license = (new License())
@@ -43,22 +44,27 @@ class SubscriptionService
                 ->setUser($user)
                 ->setTier($tier)
                 ->setLicenseKey($issued['key'])
-                ->setStripeSubscriptionId($subscriptionId)
+                ->setStripeSubscriptionId($subscription->id)
                 ->setStripeCustomerId($customerId)
                 ->setExpiresAt(0);
         }
 
-        $license->setStatus($this->mapStatus($stripeStatus));
+        $this->applyState($license, $subscription);
         $this->licenses->save($license);
 
         return $license;
     }
 
-    public function syncStatus(string $subscriptionId, string $stripeStatus): void
+    /**
+     * Sync status + scheduled-cancellation state from a subscription object. Used
+     * for customer.subscription.updated (a scheduled cancel arrives here with the
+     * status still active and cancel_at set) and .deleted (status canceled).
+     */
+    public function syncFromSubscription(Subscription $subscription): void
     {
-        $license = $this->licenses->findOneByStripeSubscriptionId($subscriptionId);
+        $license = $this->licenses->findOneByStripeSubscriptionId($subscription->id);
         if ($license instanceof License) {
-            $license->setStatus($this->mapStatus($stripeStatus));
+            $this->applyState($license, $subscription);
             $this->licenses->save($license);
         }
     }
@@ -73,6 +79,46 @@ class SubscriptionService
             $this->licenses->save($license, false);
         }
         $this->licenses->flush();
+    }
+
+    private function applyState(License $license, Subscription $subscription): void
+    {
+        $license->setStatus($this->mapStatus((string) $subscription->status));
+
+        // Stripe schedules a cancellation either via the cancel_at_period_end
+        // boolean or a concrete cancel_at timestamp (which API version / the portal
+        // uses varies). Treat either as "scheduled to cancel" and keep the date.
+        $scheduledEnd = $subscription->cancel_at ?? null;
+        $license->setCancelAtPeriodEnd((bool) ($subscription->cancel_at_period_end ?? false) || $scheduledEnd !== null);
+
+        $end = $scheduledEnd ?? $subscription->ended_at ?? null;
+        $license->setEndsAt($end !== null ? new \DateTimeImmutable('@' . (int) $end) : null);
+
+        $periodEnd = $this->periodEnd($subscription);
+        $license->setCurrentPeriodEnd($periodEnd !== null ? new \DateTimeImmutable('@' . $periodEnd) : null);
+    }
+
+    /**
+     * The date the current period ends: trial end while trialing, otherwise the
+     * billing-period end. current_period_end was a top-level field historically
+     * but newer Stripe API versions expose it on the subscription item instead.
+     */
+    private function periodEnd(Subscription $subscription): ?int
+    {
+        if (($subscription->status ?? '') === 'trialing' && !empty($subscription->trial_end)) {
+            return (int) $subscription->trial_end;
+        }
+
+        if (!empty($subscription->current_period_end)) {
+            return (int) $subscription->current_period_end;
+        }
+
+        $item = $subscription->items->data[0] ?? null;
+        if ($item !== null && !empty($item->current_period_end)) {
+            return (int) $item->current_period_end;
+        }
+
+        return null;
     }
 
     private function mapStatus(string $stripeStatus): string

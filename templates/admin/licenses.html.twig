@@ -51,13 +51,17 @@
                         <td>{{ license.tier }}</td>
                         <td>
                             {% if license.revoked %}
-                                <span class="pill pill--bad">revoked</span>
-                            {% elseif license.status in ['active', 'trialing'] %}
-                                <span class="pill pill--ok">{{ license.status }}</span>
+                                <span class="pill pill--bad">Revoked</span>
+                            {% elseif license.status in ['active', 'trialing', 'past_due'] and license.endsAt %}
+                                <span class="pill pill--warn">Cancels {{ license.endsAt|date('Y-m-d') }}</span>
+                            {% elseif license.status == 'trialing' %}
+                                <span class="pill pill--ok">Trial</span>
+                            {% elseif license.status == 'active' %}
+                                <span class="pill pill--ok">Active</span>
                             {% elseif license.status == 'past_due' %}
-                                <span class="pill pill--warn">past_due</span>
+                                <span class="pill pill--warn">Past due</span>
                             {% else %}
-                                <span class="pill pill--mute">{{ license.status }}</span>
+                                <span class="pill pill--mute">{{ license.status|replace({'_': ' '})|capitalize }}</span>
                             {% endif %}
                         </td>
                         <td>

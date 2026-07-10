@@ -50,16 +50,24 @@ class StripeService
         return $customer->id;
     }
 
-    public function createCheckoutSession(string $customerId, string $priceId, string $successUrl, string $cancelUrl): CheckoutSession
+    public function createCheckoutSession(string $customerId, string $priceId, string $successUrl, string $cancelUrl, int $trialDays = 0): CheckoutSession
     {
-        return $this->client->checkout->sessions->create([
+        $params = [
             'mode' => 'subscription',
             'customer' => $customerId,
             'line_items' => [['price' => $priceId, 'quantity' => 1]],
             'success_url' => $successUrl,
             'cancel_url' => $cancelUrl,
             'allow_promotion_codes' => true,
-        ]);
+        ];
+
+        // A trial still collects a card up front (Checkout's default), so the
+        // subscription converts to paid automatically when the trial ends.
+        if ($trialDays > 0) {
+            $params['subscription_data'] = ['trial_period_days' => $trialDays];
+        }
+
+        return $this->client->checkout->sessions->create($params);
     }
 
     public function createBillingPortalSession(string $customerId, string $returnUrl): PortalSession

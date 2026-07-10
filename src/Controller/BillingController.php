@@ -19,6 +19,9 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 class BillingController extends AbstractController
 {
+    /** Free-trial length, granted only on a customer's first subscription. */
+    public const TRIAL_DAYS = 14;
+
     public function __construct(
         #[Autowire('%env(STRIPE_PRICE_PRO_MONTHLY)%')]
         private readonly string $priceMonthly,
@@ -51,11 +54,19 @@ class BillingController extends AbstractController
             $users->save($user);
         }
 
+        // Trial only when the customer explicitly picks the trial plan AND has no
+        // license on record. An existing/former customer (or the plain monthly/
+        // yearly cards) subscribes straight to paid, so a cancel-and-re-subscribe
+        // can't farm another free trial.
+        $wantsTrial = (string) $request->request->get('trial') === '1';
+        $trialDays = ($wantsTrial && $user->getLicenses()->isEmpty()) ? self::TRIAL_DAYS : 0;
+
         $session = $stripe->createCheckoutSession(
             $customerId,
             $priceId,
             $this->generateUrl('app_dashboard', ['checkout' => 'success'], UrlGeneratorInterface::ABSOLUTE_URL),
             $this->generateUrl('app_dashboard', ['checkout' => 'cancel'], UrlGeneratorInterface::ABSOLUTE_URL),
+            $trialDays,
         );
 
         return new RedirectResponse($session->url);

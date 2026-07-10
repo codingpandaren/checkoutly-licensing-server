@@ -75,6 +75,29 @@ class License
     private bool $revoked = false;
 
     /**
+     * Set when the customer has scheduled a cancellation that takes effect at the
+     * end of the paid period. The subscription stays active (and entitled) until
+     * then; endsAt holds that date so the portal can show "cancels on ...".
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $cancelAtPeriodEnd = false;
+
+    /**
+     * When the subscription is scheduled to end / has ended. Null while it is
+     * renewing normally.
+     */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $endsAt = null;
+
+    /**
+     * End of the current billing period: the next renewal date for an active
+     * subscription, or the trial-end date while trialing. Drives "Renews on ..."
+     * and "Free trial until ..." in the portal.
+     */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $currentPeriodEnd = null;
+
+    /**
      * The single shop domain this license is registered to (normalized). The
      * heartbeat only grants access when the calling domain matches this.
      */
@@ -127,11 +150,36 @@ class License
         if (!in_array($this->status, self::ENTITLED_STATUSES, true)) {
             return false;
         }
+        // Local / development stores always pass for an entitled license, so a
+        // vendor's developers can work against a non-production shop without
+        // consuming the single production seat (localhost is not globally unique,
+        // so it is never treated as the registered domain).
+        if (self::isLocalDomain($normalizedDomain)) {
+            return true;
+        }
         if ($this->registeredDomain === null || $this->registeredDomain === '') {
             return false;
         }
 
         return $this->registeredDomain === $normalizedDomain;
+    }
+
+    /**
+     * Whether a normalized domain is a local/development host that should always
+     * be allowed (never the registered production domain).
+     */
+    public static function isLocalDomain(string $normalizedDomain): bool
+    {
+        if (in_array($normalizedDomain, ['localhost', '127.0.0.1', '::1', '0.0.0.0'], true)) {
+            return true;
+        }
+        foreach (['.localhost', '.local', '.test'] as $suffix) {
+            if (str_ends_with($normalizedDomain, $suffix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function getId(): ?int
@@ -231,6 +279,42 @@ class License
     public function setRevoked(bool $revoked): static
     {
         $this->revoked = $revoked;
+
+        return $this;
+    }
+
+    public function isCancelAtPeriodEnd(): bool
+    {
+        return $this->cancelAtPeriodEnd;
+    }
+
+    public function setCancelAtPeriodEnd(bool $cancelAtPeriodEnd): static
+    {
+        $this->cancelAtPeriodEnd = $cancelAtPeriodEnd;
+
+        return $this;
+    }
+
+    public function getEndsAt(): ?\DateTimeImmutable
+    {
+        return $this->endsAt;
+    }
+
+    public function setEndsAt(?\DateTimeImmutable $endsAt): static
+    {
+        $this->endsAt = $endsAt;
+
+        return $this;
+    }
+
+    public function getCurrentPeriodEnd(): ?\DateTimeImmutable
+    {
+        return $this->currentPeriodEnd;
+    }
+
+    public function setCurrentPeriodEnd(?\DateTimeImmutable $currentPeriodEnd): static
+    {
+        $this->currentPeriodEnd = $currentPeriodEnd;
 
         return $this;
     }
