@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard · Checkoutly Licensing{% endblock %}
+
+{% block body %}
+    <h1 style="font-size:22px; margin:0 0 4px;">Your licenses</h1>
+    <p class="muted" style="margin:0 0 24px;">Signed in as {{ app.user.email }}.</p>
+
+    {% if licenses is empty %}
+        <div class="card" style="text-align:center;">
+            <p style="margin:0 0 6px; font-weight:600;">You don't have a license yet.</p>
+            <p class="muted" style="margin:0 0 20px;">Subscribe to Checkoutly Pro to unlock the premium anti-abandonment features.</p>
+            <span class="btn btn--primary" style="opacity:.55; cursor:not-allowed;">Subscribe (coming soon)</span>
+        </div>
+    {% else %}
+        {% for license in licenses %}
+            <div class="card" style="margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong>Checkoutly {{ license.tier|capitalize }}</strong>
+                    <span class="muted">{{ license.status }}</span>
+                </div>
+                <p class="muted" style="font-size:13px; margin:10px 0 0;">
+                    Registered domain: {{ license.registeredDomain ?: 'not set' }}
+                </p>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endblock %}

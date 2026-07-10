@@ -14,6 +14,7 @@
         "league/oauth2-facebook": "^2.2",
         "league/oauth2-google": "^5.0",
         "stripe/stripe-php": "^20.3",
+        "symfony/apache-pack": "*",
         "symfony/asset": "8.1.*",
         "symfony/console": "8.1.*",
         "symfony/dotenv": "8.1.*",
@@ -78,7 +79,7 @@
     },
     "extra": {
         "symfony": {
-            "allow-contrib": false,
+            "allow-contrib": "true",
             "require": "8.1.*"
         }
     },

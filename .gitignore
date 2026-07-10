@@ -1,4 +1,7 @@
 
+# .env holds real tokens in this project — keep it local, never commit it.
+/.env
+
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
