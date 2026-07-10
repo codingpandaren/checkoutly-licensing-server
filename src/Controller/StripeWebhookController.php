@@ -43,37 +43,49 @@ class StripeWebhookController extends AbstractController
         }
 
         $object = $event->data->object;
+        $log = ['event' => $event->id, 'type' => $event->type];
 
         try {
             switch ($event->type) {
                 case 'checkout.session.completed':
                     if (($object->mode ?? null) === 'subscription' && !empty($object->subscription)) {
                         $subscription = $stripe->retrieveSubscription((string) $object->subscription);
-                        $subscriptions->provision(
+                        $license = $subscriptions->provision(
                             (string) $object->customer,
                             $subscription->id,
                             (string) $subscription->status,
                         );
+                        if ($license === null) {
+                            $logger->warning('Stripe webhook: no user for customer, license not provisioned', $log + ['customer' => (string) $object->customer]);
+                        } else {
+                            $logger->info('Stripe webhook: license provisioned', $log + ['license' => $license->getLicenseId()]);
+                        }
                     }
                     break;
 
                 case 'customer.subscription.updated':
                     $subscriptions->syncStatus((string) $object->id, (string) $object->status);
+                    $logger->info('Stripe webhook: subscription status synced', $log + ['status' => (string) $object->status]);
                     break;
 
                 case 'customer.subscription.deleted':
                     $subscriptions->syncStatus((string) $object->id, 'canceled');
+                    $logger->info('Stripe webhook: subscription canceled', $log);
                     break;
 
                 case 'charge.refunded':
                 case 'charge.dispute.created':
                     if (!empty($object->customer)) {
                         $subscriptions->revokeByCustomer((string) $object->customer);
+                        $logger->info('Stripe webhook: licenses revoked for customer', $log + ['customer' => (string) $object->customer]);
                     }
                     break;
+
+                default:
+                    $logger->debug('Stripe webhook: ignored event', $log);
             }
         } catch (\Throwable $e) {
-            $logger->error('Stripe webhook processing error (' . $event->type . '): ' . $e->getMessage());
+            $logger->error('Stripe webhook processing error: ' . $e->getMessage(), $log);
 
             return new Response('processing error', Response::HTTP_INTERNAL_SERVER_ERROR);
         }

@@ -1,0 +1,93 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Licenses · Admin · Checkoutly{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+        .stat { flex:1; min-width:120px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+        .stat__n { font-size:24px; font-weight:700; }
+        .stat__l { font-size:12.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+        .tbl-wrap { overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:14px; }
+        table { width:100%; border-collapse:collapse; font-size:13.5px; }
+        th, td { text-align:left; padding:11px 14px; border-bottom:1px solid var(--line); white-space:nowrap; }
+        th { font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); }
+        tr:last-child td { border-bottom:none; }
+        .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; }
+        .btn--sm { padding:6px 12px; font-size:12.5px; }
+        .btn--danger { color:var(--danger); border-color:#fecaca; }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <h1 style="font-size:22px; margin:0 0 20px;">Licenses</h1>
+
+    <div class="stats">
+        <div class="stat"><div class="stat__n">{{ stats.total }}</div><div class="stat__l">Total</div></div>
+        <div class="stat"><div class="stat__n">{{ stats.entitled }}</div><div class="stat__l">Active seats</div></div>
+        <div class="stat"><div class="stat__n">{{ stats.registered }}</div><div class="stat__l">Registered</div></div>
+        <div class="stat"><div class="stat__n">{{ stats.revoked }}</div><div class="stat__l">Revoked</div></div>
+    </div>
+
+    <div class="tbl-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>License</th>
+                    <th>Owner</th>
+                    <th>Tier</th>
+                    <th>Status</th>
+                    <th>Registered domain</th>
+                    <th>Last seen</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for license in licenses %}
+                    <tr>
+                        <td class="mono">{{ license.licenseId }}</td>
+                        <td>{{ license.user.email }}</td>
+                        <td>{{ license.tier }}</td>
+                        <td>
+                            {% if license.revoked %}
+                                <span class="pill pill--bad">revoked</span>
+                            {% elseif license.status in ['active', 'trialing'] %}
+                                <span class="pill pill--ok">{{ license.status }}</span>
+                            {% elseif license.status == 'past_due' %}
+                                <span class="pill pill--warn">past_due</span>
+                            {% else %}
+                                <span class="pill pill--mute">{{ license.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if license.registeredDomain %}
+                                <span class="mono">{{ license.registeredDomain }}</span>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if license.lastSeenAt %}
+                                <span title="{{ license.lastSeenDomain }}">{{ license.lastSeenAt|date('Y-m-d H:i') }}</span>
+                            {% else %}
+                                <span class="muted">never</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" action="{{ path('app_admin_license_revoke', {id: license.id}) }}"
+                                  onsubmit="return confirm('{{ license.revoked ? 'Reinstate' : 'Revoke' }} license {{ license.licenseId }}?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_revoke_' ~ license.id) }}">
+                                <button type="submit" class="btn btn--sm {{ license.revoked ? '' : 'btn--danger' }}">
+                                    {{ license.revoked ? 'Reinstate' : 'Revoke' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="muted" style="text-align:center; padding:28px;">No licenses yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

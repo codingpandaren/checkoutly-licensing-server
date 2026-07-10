@@ -7,8 +7,11 @@ namespace App\Controller\Api;
 use App\Repository\LicenseRepository;
 use App\Service\DomainNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -20,9 +23,23 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 class LicenseStatusController extends AbstractController
 {
+    public function __construct(
+        #[Autowire(service: 'limiter.license_status')]
+        private readonly RateLimiterFactory $licenseStatusLimiter,
+    ) {
+    }
+
     #[Route('/api/license/status', name: 'api_license_status', methods: ['POST'])]
     public function status(Request $request, LicenseRepository $licenses, DomainNormalizer $normalizer): JsonResponse
     {
+        $limit = $this->licenseStatusLimiter->create($request->getClientIp())->consume();
+        if (!$limit->isAccepted()) {
+            $response = new JsonResponse(['error' => 'rate_limited'], Response::HTTP_TOO_MANY_REQUESTS);
+            $response->headers->set('Retry-After', (string) max(1, $limit->getRetryAfter()->getTimestamp() - time()));
+
+            return $response;
+        }
+
         $payload = json_decode($request->getContent(), true);
         if (!is_array($payload)) {
             return new JsonResponse(['error' => 'invalid_request'], 400);

@@ -2,22 +2,53 @@
 
 {% block title %}License · Checkoutly Licensing{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .hint { display:flex; align-items:flex-start; gap:10px; background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:10px; padding:12px 14px; margin:0 0 14px; font-size:13.5px; line-height:1.5; }
+        .hint svg { flex:none; margin-top:1px; }
+        .hint form { display:inline; }
+        .hint button { background:none; border:none; padding:0; margin:0; font:inherit; color:#92400e; font-weight:700; text-decoration:underline; cursor:pointer; }
+        .hint code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background:rgba(146,64,14,.1); padding:1px 5px; border-radius:4px; }
+    </style>
+{% endblock %}
+
 {% block body %}
     <p style="margin:0 0 16px;"><a href="{{ path('app_dashboard') }}">← Back to licenses</a></p>
 
+    {% set entitled = not license.revoked and license.status in ['active', 'trialing', 'past_due'] %}
     <div class="card" style="margin-bottom:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
             <h1 style="font-size:20px; margin:0;">Checkoutly {{ license.tier|capitalize }}</h1>
-            <span class="muted">{{ license.status }}</span>
+            {% if license.revoked %}
+                <span class="pill pill--bad">revoked</span>
+            {% elseif entitled %}
+                <span class="pill pill--ok">active</span>
+            {% else %}
+                <span class="pill pill--mute">{{ license.status }}</span>
+            {% endif %}
         </div>
         <dl style="display:grid; grid-template-columns:max-content 1fr; gap:8px 20px; margin:18px 0 0; font-size:14px;">
-            <dt class="muted">Expires</dt>
-            <dd style="margin:0;">{{ license.expiresAt == 0 ? 'Never (perpetual)' : license.expiresAt|date('Y-m-d') }}</dd>
+            <dt class="muted">Subscription</dt>
+            <dd style="margin:0;">
+                {% if license.revoked %}
+                    Revoked — premium features are disabled.
+                {% elseif entitled %}
+                    Active — renews automatically with your {{ license.tier }} subscription.
+                {% elseif license.status == 'canceled' %}
+                    Canceled — premium features are disabled.
+                {% else %}
+                    {{ license.status|replace({'_': ' '})|capitalize }}
+                {% endif %}
+            </dd>
             <dt class="muted">Last check-in</dt>
             <dd style="margin:0;">
                 {% if license.lastSeenAt %}{{ license.lastSeenAt|date('Y-m-d H:i') }}{% if license.lastSeenDomain %} from {{ license.lastSeenDomain }}{% endif %}{% else %}never{% endif %}
             </dd>
         </dl>
+        {% if app.user.stripeCustomerId %}
+            <p class="muted" style="margin:14px 0 0; font-size:13px;">Manage renewal, payment method or cancellation from <a href="{{ path('app_dashboard') }}">your dashboard → Manage billing</a>.</p>
+        {% endif %}
     </div>
 
     <div class="card" style="margin-bottom:16px;">
@@ -35,6 +66,25 @@
             Your license works on a single store domain. Register it here before activating the module — the key will only unlock premium features on this domain.
             {% if license.registeredDomain %}To move to a new domain (e.g. after a migration), just update it below.{% endif %}
         </p>
+
+        {% if license.lastSeenDomain and license.lastSeenDomain != license.registeredDomain %}
+            <div class="hint">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5m0 3h.01M10.3 3.86l-8.06 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.76-3.14l-8.06-14a2 2 0 0 0-3.4 0z" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div>
+                    {% if license.registeredDomain %}
+                        Your shop is checking in as <code>{{ license.lastSeenDomain }}</code>, but this license is registered to <code>{{ license.registeredDomain }}</code>. Premium won't unlock until they match.
+                    {% else %}
+                        Your shop is checking in as <code>{{ license.lastSeenDomain }}</code> but no domain is registered yet. Register it to unlock premium.
+                    {% endif %}
+                    <form method="post" action="{{ path('app_license_domain', {id: license.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('license_domain_' ~ license.id) }}">
+                        <input type="hidden" name="domain" value="{{ license.lastSeenDomain }}">
+                        <button type="submit">Use {{ license.lastSeenDomain }}</button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+
         <form method="post" action="{{ path('app_license_domain', {id: license.id}) }}" style="display:flex; gap:8px;">
             <input type="hidden" name="_token" value="{{ csrf_token('license_domain_' ~ license.id) }}">
             <input type="text" name="domain" class="btn" style="flex:1; cursor:text;" placeholder="yourstore.com" value="{{ license.registeredDomain }}" autocomplete="off" spellcheck="false">

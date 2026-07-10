@@ -4,33 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Checkoutly Licensing{% endblock %}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔑</text></svg>">
+    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     {% block stylesheets %}
         <style>
-            :root { --bg:#f6f8fb; --card:#fff; --line:#e5e9f0; --ink:#1c2430; --muted:#6b7787; --accent:#2b6cff; --accent-ink:#fff; --danger:#dc2626; --ok:#16a34a; }
+            :root {
+                --bg:#f4f6fb; --card:#fff; --line:#e6eaf1; --ink:#151b26; --muted:#6b7787;
+                --accent:#10b981; --accent-ink:#fff; --danger:#dc2626; --ok:#16a34a;
+                --grad:linear-gradient(120deg,#10b981 0%,#3b82f6 55%,#a855f7 100%);
+                --shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.06);
+            }
             * { box-sizing: border-box; }
-            body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); }
-            a { color:var(--accent); text-decoration:none; }
-            .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; background:var(--card); border-bottom:1px solid var(--line); }
-            .topbar__brand { font-weight:700; font-size:16px; }
-            .topbar__brand span { color:var(--accent); }
+            body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
+            a { color:#2563eb; text-decoration:none; }
+            a:hover { text-decoration:underline; }
+            .topbar { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; background:var(--card); border-bottom:1px solid var(--line); }
+            .topbar__brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; letter-spacing:-.01em; }
+            .topbar__brand img { width:30px; height:30px; display:block; }
+            .topbar__brand span { background:var(--grad); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
             .topbar__user { display:flex; align-items:center; gap:14px; font-size:13.5px; color:var(--muted); }
-            .container { max-width:920px; margin:0 auto; padding:32px 24px; }
-            .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px; }
+            .container { max-width:960px; margin:0 auto; padding:36px 24px; }
+            .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow:var(--shadow); }
             .flash { border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:14px; }
             .flash--error { background:#fef2f2; color:var(--danger); border:1px solid #fecaca; }
             .flash--success { background:#f0fdf4; color:var(--ok); border:1px solid #bbf7d0; }
-            .btn { display:inline-flex; align-items:center; gap:10px; padding:11px 18px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:14px; font-weight:600; cursor:pointer; }
-            .btn--primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
-            .btn--block { width:100%; justify-content:center; }
+            .btn { display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:11px 18px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:14px; font-weight:600; cursor:pointer; transition:transform .06s ease, box-shadow .15s ease, background .15s ease; }
+            .btn:hover { text-decoration:none; box-shadow:var(--shadow); }
+            .btn:active { transform:translateY(1px); }
+            .btn--primary { background:var(--grad); color:var(--accent-ink); border-color:transparent; }
+            .btn--primary:hover { box-shadow:0 6px 18px rgba(16,185,129,.32); }
+            .btn--block { width:100%; }
             .muted { color:var(--muted); }
+            .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+            .pill--ok { background:#f0fdf4; color:var(--ok); }
+            .pill--warn { background:#fffbeb; color:#b45309; }
+            .pill--bad { background:#fef2f2; color:var(--danger); }
+            .pill--mute { background:#f1f5f9; color:var(--muted); }
         </style>
     {% endblock %}
     {% block javascripts %}{% endblock %}
 </head>
 <body>
     <header class="topbar">
-        <div class="topbar__brand">Checkoutly <span>Licensing</span></div>
+        <a class="topbar__brand" href="{{ path('app_dashboard') }}" style="color:inherit;">
+            <img src="{{ asset('logo.png') }}" alt="Checkoutly">
+            Checkoutly <span>Licensing</span>
+        </a>
         {% if app.user %}
             <div class="topbar__user">
                 <span>{{ app.user.displayName ?: app.user.email }}</span>

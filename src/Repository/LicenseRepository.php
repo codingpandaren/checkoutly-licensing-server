@@ -33,6 +33,22 @@ class LicenseRepository extends ServiceEntityRepository
         return $this->findOneBy(['registeredDomain' => $domain]);
     }
 
+    /**
+     * Newest-activity-first listing for the admin console, user eager-loaded to
+     * avoid an N+1 when rendering the owner column.
+     *
+     * @return list<License>
+     */
+    public function findAllForAdmin(): array
+    {
+        return $this->createQueryBuilder('l')
+            ->addSelect('u')
+            ->join('l.user', 'u')
+            ->orderBy('l.updatedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function save(License $license, bool $flush = true): void
     {
         $em = $this->getEntityManager();

@@ -27,5 +27,7 @@ security:
         # Public machine endpoints: module heartbeat + Stripe webhook (own auth)
         - { path: ^/api, roles: PUBLIC_ACCESS }
         - { path: ^/webhook, roles: PUBLIC_ACCESS }
+        # Operator console
+        - { path: ^/admin, roles: ROLE_ADMIN }
         # Everything else (the customer portal) requires a logged-in user
         - { path: ^/, roles: ROLE_USER }

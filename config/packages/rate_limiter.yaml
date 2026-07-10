@@ -1,0 +1,9 @@
+framework:
+    rate_limiter:
+        # Module heartbeat endpoint. Legitimate shops call this at most once per
+        # day (throttled client-side), so a generous per-IP ceiling only ever bites
+        # abuse / id-enumeration attempts, never a real merchant.
+        license_status:
+            policy: 'sliding_window'
+            limit: 60
+            interval: '1 minute'
