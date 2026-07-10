@@ -23,7 +23,7 @@ class FacebookAuthenticator extends OAuthAuthenticator
      * Fetch only id/name/email directly from the Graph API. The league provider's
      * default resource-owner request also asks for permission-gated fields
      * (hometown, picture, …) which newer Graph versions reject, taking the whole
-     * response — email included — down with them. The token goes in the query
+     * response - email included - down with them. The token goes in the query
      * string because Facebook expects ?access_token=, not a Bearer header.
      *
      * Note: even with the "email" permission granted, Facebook omits the email

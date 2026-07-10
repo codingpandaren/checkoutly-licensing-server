@@ -21,7 +21,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 /**
  * Grant a license to a user (find-or-create by email), mint the signed key and
  * persist an active License. Used for manual/comp grants and for testing the
- * portal before Stripe issuance exists. The key is signed WITHOUT a domain — the
+ * portal before Stripe issuance exists. The key is signed WITHOUT a domain - the
  * registered domain lives on the License row so it can be transferred in the
  * portal without re-issuing the key.
  */

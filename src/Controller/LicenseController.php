@@ -57,7 +57,7 @@ class LicenseController extends AbstractController
         $license->setRegisteredDomain($domain);
         $licenses->save($license);
 
-        $this->addFlash('success', 'Store domain set to ' . $domain . '. Changes can take up to 24 hours to apply in your shop — or re-save your license key in the module to apply immediately.');
+        $this->addFlash('success', 'Store domain set to ' . $domain . '. Changes can take up to 24 hours to apply in your shop - or re-save your license key in the module to apply immediately.');
 
         return $this->redirectToRoute('app_license_show', ['id' => $license->getId()]);
     }

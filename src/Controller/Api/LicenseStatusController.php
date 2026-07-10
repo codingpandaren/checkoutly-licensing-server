@@ -18,7 +18,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * Module-facing heartbeat. The module POSTs {id, domain} (throttled, from its
  * back office) and honours {revoked: bool}. We answer revoked=false only when
  * the license is entitled AND the calling domain matches the one registered in
- * the portal — that is the whole anti-sharing / seat enforcement. An unknown id
+ * the portal - that is the whole anti-sharing / seat enforcement. An unknown id
  * (no such license on record) is treated as revoked.
  */
 class LicenseStatusController extends AbstractController

@@ -1,5 +1,5 @@
 
-# .env holds real tokens in this project — keep it local, never commit it.
+# .env holds real tokens in this project - keep it local, never commit it.
 /.env
 
 ###> symfony/framework-bundle ###

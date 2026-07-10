@@ -11,7 +11,7 @@ use App\Repository\UserRepository;
 
 /**
  * Turns Stripe subscription events into License state. One Stripe subscription
- * maps to one License, keyed by the subscription id (idempotent — a replayed
+ * maps to one License, keyed by the subscription id (idempotent - a replayed
  * checkout event updates rather than duplicates). Keys are perpetual and
  * domain-less; access is governed by the synced status + revoked flag and the
  * portal-registered domain, per the enforcement model.

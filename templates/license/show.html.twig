@@ -32,11 +32,11 @@
             <dt class="muted">Subscription</dt>
             <dd style="margin:0;">
                 {% if license.revoked %}
-                    Revoked — premium features are disabled.
+                    Revoked - premium features are disabled.
                 {% elseif entitled %}
-                    Active — renews automatically with your {{ license.tier }} subscription.
+                    Active - renews automatically with your {{ license.tier }} subscription.
                 {% elseif license.status == 'canceled' %}
-                    Canceled — premium features are disabled.
+                    Canceled - premium features are disabled.
                 {% else %}
                     {{ license.status|replace({'_': ' '})|capitalize }}
                 {% endif %}
@@ -63,7 +63,7 @@
     <div class="card">
         <h2 style="font-size:15px; margin:0 0 6px;">Store domain</h2>
         <p class="muted" style="margin:0 0 14px; font-size:13px;">
-            Your license works on a single store domain. Register it here before activating the module — the key will only unlock premium features on this domain.
+            Your license works on a single store domain. Register it here before activating the module - the key will only unlock premium features on this domain.
             {% if license.registeredDomain %}To move to a new domain (e.g. after a migration), just update it below.{% endif %}
         </p>
 

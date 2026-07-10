@@ -14,7 +14,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class DashboardController extends AbstractController
 {
     /**
-     * Display pricing. These are marketing figures only — the actual charge is
+     * Display pricing. These are marketing figures only - the actual charge is
      * driven by the Stripe price IDs (STRIPE_PRICE_PRO_MONTHLY / _YEARLY); keep
      * these in sync with those prices.
      */

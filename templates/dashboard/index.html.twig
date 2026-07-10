@@ -56,9 +56,9 @@
 {% block body %}
     {% set checkout = app.request.query.get('checkout') %}
     {% if checkout == 'success' %}
-        <div class="flash flash--success">Payment received — your license will appear here as soon as Stripe confirms it (usually a few seconds).</div>
+        <div class="flash flash--success">Payment received - your license will appear here as soon as Stripe confirms it (usually a few seconds).</div>
     {% elseif checkout == 'cancel' %}
-        <div class="flash flash--error">Checkout canceled — you have not been charged.</div>
+        <div class="flash flash--error">Checkout canceled - you have not been charged.</div>
     {% endif %}
 
     <div class="dash-head">
@@ -115,7 +115,7 @@
     <section class="pricing">
         <div class="pricing__hero">
             <h2>{{ licenses is empty ? 'Turn abandoned carts into orders' : 'Add another license' }}</h2>
-            <p>Checkoutly Pro unlocks the anti-abandonment tools that keep shoppers from leaving before they pay — one license per store.</p>
+            <p>Checkoutly Pro unlocks the anti-abandonment tools that keep shoppers from leaving before they pay - one license per store.</p>
         </div>
 
         {% if licenses is empty %}
@@ -165,7 +165,7 @@
                     <span class="plan__amt">{{ pricing.currency }}{{ pricing.yearly }}</span>
                     <span class="plan__per">/ year</span>
                 </div>
-                <div class="plan__sub">Just {{ pricing.currency }}{{ pricing.yearly_per_month }}/mo — <span class="plan__save">save {{ pricing.currency }}{{ pricing.yearly_saving }}, 2 months free</span>.</div>
+                <div class="plan__sub">Just {{ pricing.currency }}{{ pricing.yearly_per_month }}/mo - <span class="plan__save">save {{ pricing.currency }}{{ pricing.yearly_saving }}, 2 months free</span>.</div>
                 <ul class="plan__feats">
                     {% for item in included %}
                         <li><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4 4L19 7" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>{{ item }}</li>

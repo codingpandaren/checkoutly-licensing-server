@@ -11,7 +11,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Kicks off the OAuth redirect for each provider. The matching /check routes
- * carry no body — the firewall's authenticator intercepts them on return.
+ * carry no body - the firewall's authenticator intercepts them on return.
  */
 class ConnectController extends AbstractController
 {

@@ -17,7 +17,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 /**
  * Grant or revoke ROLE_ADMIN (access to the /admin operator console) for a user
  * by email. Roles are persisted on the user row, so this is how the first admin
- * is created — the user must have logged in via OAuth at least once.
+ * is created - the user must have logged in via OAuth at least once.
  */
 #[AsCommand(name: 'app:user:promote', description: 'Grant or revoke ROLE_ADMIN for a user by email')]
 class PromoteUserCommand extends Command

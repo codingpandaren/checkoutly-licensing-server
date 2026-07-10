@@ -89,7 +89,7 @@ class License
     private int $expiresAt = 0;
 
     /**
-     * Last domain seen on a heartbeat and when — for the portal and abuse review.
+     * Last domain seen on a heartbeat and when - for the portal and abuse review.
      */
     #[ORM\Column(length: 191, nullable: true)]
     private ?string $lastSeenDomain = null;
