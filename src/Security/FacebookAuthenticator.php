@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Security;
 
-use League\OAuth2\Client\Provider\FacebookUser;
-use League\OAuth2\Client\Provider\ResourceOwnerInterface;
+use KnpU\OAuth2ClientBundle\Client\OAuth2ClientInterface;
+use League\OAuth2\Client\Token\AccessToken;
 
 class FacebookAuthenticator extends OAuthAuthenticator
 {
@@ -19,14 +19,29 @@ class FacebookAuthenticator extends OAuthAuthenticator
         return 'connect_facebook_check';
     }
 
-    protected function mapOwner(ResourceOwnerInterface $owner): array
+    /**
+     * Fetch only id/name/email directly from the Graph API. The league provider's
+     * default resource-owner request also asks for permission-gated fields
+     * (hometown, picture, …) which newer Graph versions reject, taking the whole
+     * response — email included — down with them.
+     */
+    protected function identify(OAuth2ClientInterface $client, AccessToken $token): array
     {
-        /* @var FacebookUser $owner */
+        $provider = $client->getOAuth2Provider();
+        $request = $provider->getAuthenticatedRequest(
+            'GET',
+            'https://graph.facebook.com/v21.0/me?fields=id,name,email',
+            $token
+        );
+
+        /** @var array<string, mixed> $data */
+        $data = $provider->getParsedResponse($request);
+
         return [
             'provider' => 'facebook',
-            'id' => (string) $owner->getId(),
-            'email' => (string) $owner->getEmail(),
-            'name' => $owner->getName(),
+            'id' => (string) ($data['id'] ?? ''),
+            'email' => (string) ($data['email'] ?? ''),
+            'name' => isset($data['name']) ? (string) $data['name'] : null,
         ];
     }
 }

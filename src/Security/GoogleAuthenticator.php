@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use KnpU\OAuth2ClientBundle\Client\OAuth2ClientInterface;
 use League\OAuth2\Client\Provider\GoogleUser;
-use League\OAuth2\Client\Provider\ResourceOwnerInterface;
+use League\OAuth2\Client\Token\AccessToken;
 
 class GoogleAuthenticator extends OAuthAuthenticator
 {
@@ -19,9 +20,11 @@ class GoogleAuthenticator extends OAuthAuthenticator
         return 'connect_google_check';
     }
 
-    protected function mapOwner(ResourceOwnerInterface $owner): array
+    protected function identify(OAuth2ClientInterface $client, AccessToken $token): array
     {
-        /* @var GoogleUser $owner */
+        /** @var GoogleUser $owner */
+        $owner = $client->fetchUserFromToken($token);
+
         return [
             'provider' => 'google',
             'id' => (string) $owner->getId(),
