@@ -28,14 +28,11 @@ class FacebookAuthenticator extends OAuthAuthenticator
     protected function identify(OAuth2ClientInterface $client, AccessToken $token): array
     {
         $provider = $client->getOAuth2Provider();
-        $request = $provider->getAuthenticatedRequest(
-            'GET',
-            'https://graph.facebook.com/v21.0/me?fields=id,name,email',
-            $token
-        );
+        $url = 'https://graph.facebook.com/v21.0/me?fields=id,name,email&access_token='
+            . urlencode($token->getToken());
 
         /** @var array<string, mixed> $data */
-        $data = $provider->getParsedResponse($request);
+        $data = $provider->getParsedResponse($provider->getRequest('GET', $url));
 
         return [
             'provider' => 'facebook',
