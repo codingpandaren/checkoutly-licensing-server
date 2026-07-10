@@ -28,6 +28,11 @@ class LicenseRepository extends ServiceEntityRepository
         return $this->findOneBy(['stripeSubscriptionId' => $stripeSubscriptionId]);
     }
 
+    public function findOneByRegisteredDomain(string $domain): ?License
+    {
+        return $this->findOneBy(['registeredDomain' => $domain]);
+    }
+
     public function save(License $license, bool $flush = true): void
     {
         $em = $this->getEntityManager();

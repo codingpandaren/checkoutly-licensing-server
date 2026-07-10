@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}License · Checkoutly Licensing{% endblock %}
+
+{% block body %}
+    <p style="margin:0 0 16px;"><a href="{{ path('app_dashboard') }}">← Back to licenses</a></p>
+
+    <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+            <h1 style="font-size:20px; margin:0;">Checkoutly {{ license.tier|capitalize }}</h1>
+            <span class="muted">{{ license.status }}</span>
+        </div>
+        <dl style="display:grid; grid-template-columns:max-content 1fr; gap:8px 20px; margin:18px 0 0; font-size:14px;">
+            <dt class="muted">Expires</dt>
+            <dd style="margin:0;">{{ license.expiresAt == 0 ? 'Never (perpetual)' : license.expiresAt|date('Y-m-d') }}</dd>
+            <dt class="muted">Last check-in</dt>
+            <dd style="margin:0;">
+                {% if license.lastSeenAt %}{{ license.lastSeenAt|date('Y-m-d H:i') }}{% if license.lastSeenDomain %} from {{ license.lastSeenDomain }}{% endif %}{% else %}never{% endif %}
+            </dd>
+        </dl>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+        <h2 style="font-size:15px; margin:0 0 6px;">Your license key</h2>
+        <p class="muted" style="margin:0 0 12px; font-size:13px;">Paste this into Checkoutly → License tab in your PrestaShop back office.</p>
+        <div style="display:flex; gap:8px;">
+            <input id="ck-key" class="btn" style="flex:1; font-family:monospace; font-size:12px; overflow:hidden; text-overflow:ellipsis; cursor:text;" value="{{ license.licenseKey }}" readonly onclick="this.select()">
+            <button type="button" class="btn btn--primary" onclick="navigator.clipboard.writeText(document.getElementById('ck-key').value); this.textContent='Copied';">Copy</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 style="font-size:15px; margin:0 0 6px;">Store domain</h2>
+        <p class="muted" style="margin:0 0 14px; font-size:13px;">
+            Your license works on a single store domain. Register it here before activating the module — the key will only unlock premium features on this domain.
+            {% if license.registeredDomain %}To move to a new domain (e.g. after a migration), just update it below.{% endif %}
+        </p>
+        <form method="post" action="{{ path('app_license_domain', {id: license.id}) }}" style="display:flex; gap:8px;">
+            <input type="hidden" name="_token" value="{{ csrf_token('license_domain_' ~ license.id) }}">
+            <input type="text" name="domain" class="btn" style="flex:1; cursor:text;" placeholder="yourstore.com" value="{{ license.registeredDomain }}" autocomplete="off" spellcheck="false">
+            <button type="submit" class="btn btn--primary">{{ license.registeredDomain ? 'Update' : 'Register' }}</button>
+        </form>
+    </div>
+{% endblock %}

@@ -14,15 +14,15 @@
         </div>
     {% else %}
         {% for license in licenses %}
-            <div class="card" style="margin-bottom:16px;">
+            <a href="{{ path('app_license_show', {id: license.id}) }}" class="card" style="display:block; margin-bottom:16px; color:inherit;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <strong>Checkoutly {{ license.tier|capitalize }}</strong>
                     <span class="muted">{{ license.status }}</span>
                 </div>
                 <p class="muted" style="font-size:13px; margin:10px 0 0;">
-                    Registered domain: {{ license.registeredDomain ?: 'not set' }}
+                    Domain: {{ license.registeredDomain ?: 'not registered yet' }} · Manage →
                 </p>
-            </div>
+            </a>
         {% endfor %}
     {% endif %}
 {% endblock %}
