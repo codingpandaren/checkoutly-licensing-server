@@ -28,6 +28,11 @@ class UserRepository extends ServiceEntityRepository
         return $this->findOneBy(['oauthProvider' => $provider, 'oauthId' => $oauthId]);
     }
 
+    public function findOneByStripeCustomerId(string $customerId): ?User
+    {
+        return $this->findOneBy(['stripeCustomerId' => $customerId]);
+    }
+
     public function save(User $user, bool $flush = true): void
     {
         $em = $this->getEntityManager();

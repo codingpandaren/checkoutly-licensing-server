@@ -3,26 +3,52 @@
 {% block title %}Dashboard · Checkoutly Licensing{% endblock %}
 
 {% block body %}
-    <h1 style="font-size:22px; margin:0 0 4px;">Your licenses</h1>
-    <p class="muted" style="margin:0 0 24px;">Signed in as {{ app.user.email }}.</p>
-
-    {% if licenses is empty %}
-        <div class="card" style="text-align:center;">
-            <p style="margin:0 0 6px; font-weight:600;">You don't have a license yet.</p>
-            <p class="muted" style="margin:0 0 20px;">Subscribe to Checkoutly Pro to unlock the premium anti-abandonment features.</p>
-            <span class="btn btn--primary" style="opacity:.55; cursor:not-allowed;">Subscribe (coming soon)</span>
-        </div>
-    {% else %}
-        {% for license in licenses %}
-            <a href="{{ path('app_license_show', {id: license.id}) }}" class="card" style="display:block; margin-bottom:16px; color:inherit;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <strong>Checkoutly {{ license.tier|capitalize }}</strong>
-                    <span class="muted">{{ license.status }}</span>
-                </div>
-                <p class="muted" style="font-size:13px; margin:10px 0 0;">
-                    Domain: {{ license.registeredDomain ?: 'not registered yet' }} · Manage →
-                </p>
-            </a>
-        {% endfor %}
+    {% set checkout = app.request.query.get('checkout') %}
+    {% if checkout == 'success' %}
+        <div class="flash flash--success">Payment received — your license will appear here as soon as Stripe confirms it (usually a few seconds).</div>
+    {% elseif checkout == 'cancel' %}
+        <div class="flash flash--error">Checkout canceled — you have not been charged.</div>
     {% endif %}
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 0 24px;">
+        <div>
+            <h1 style="font-size:22px; margin:0 0 4px;">Your licenses</h1>
+            <p class="muted" style="margin:0;">Signed in as {{ app.user.email }}.</p>
+        </div>
+        {% if app.user.stripeCustomerId %}
+            <form method="post" action="{{ path('app_billing_portal') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('billing_portal') }}">
+                <button type="submit" class="btn">Manage billing</button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% for license in licenses %}
+        <a href="{{ path('app_license_show', {id: license.id}) }}" class="card" style="display:block; margin-bottom:16px; color:inherit;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>Checkoutly {{ license.tier|capitalize }}</strong>
+                <span class="muted">{{ license.status }}</span>
+            </div>
+            <p class="muted" style="font-size:13px; margin:10px 0 0;">
+                Domain: {{ license.registeredDomain ?: 'not registered yet' }} · Manage →
+            </p>
+        </a>
+    {% endfor %}
+
+    <div class="card" style="text-align:center; margin-top:8px;">
+        <p style="margin:0 0 4px; font-weight:600;">{{ licenses is empty ? 'Get Checkoutly Pro' : 'Add another license' }}</p>
+        <p class="muted" style="margin:0 0 20px;">Unlock the premium anti-abandonment features. Cancel anytime.</p>
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <form method="post" action="{{ path('app_billing_subscribe') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('billing_subscribe') }}">
+                <input type="hidden" name="plan" value="monthly">
+                <button type="submit" class="btn btn--primary">Subscribe monthly</button>
+            </form>
+            <form method="post" action="{{ path('app_billing_subscribe') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('billing_subscribe') }}">
+                <input type="hidden" name="plan" value="yearly">
+                <button type="submit" class="btn">Subscribe yearly</button>
+            </form>
+        </div>
+    </div>
 {% endblock %}
