@@ -55,7 +55,7 @@ abstract class OAuthAuthenticator extends OAuth2Authenticator
         $data = $this->identify($client, $this->fetchAccessToken($client));
 
         if ($data['email'] === '') {
-            throw new CustomUserMessageAuthenticationException('Your account did not share an email address, which we need to manage your license.');
+            throw new CustomUserMessageAuthenticationException('We could not get an email address from your account, which we need to manage your license. Please sign in with Google, or add a confirmed email to your account and try again.');
         }
 
         return new SelfValidatingPassport(
