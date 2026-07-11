@@ -17,6 +17,36 @@ Do the phases in order. `$` = run on the VPS as your sudo user unless noted.
 
 ---
 
+## ⚠️ Three rules that will save you an afternoon
+
+These caused every 500 during the first deploy — read before Phase 3.
+
+1. **Create every mounted file as a real FILE _before_ the first `docker compose up`.**
+   The app bind-mounts `.env.local` and `secrets/license-private.pem`. If either
+   path doesn't exist when the container is created, Docker silently makes it an
+   **empty directory**, and you get "no DATABASE_URL / signing key not configured"
+   with no obvious cause. If it happens: `docker compose ... down`,
+   `rm -rf <the-bogus-dir>`, create the real file, `up -d`. A plain `up -d` will
+   **not** fix it — an unchanged container isn't recreated, so the stale
+   directory-mount persists; you need `down` then `up`.
+
+2. **Paths inside `.env.local` are CONTAINER paths, not host paths.** The signing
+   key lives on the host at `/opt/checkoutly-licensing/secrets/license-private.pem`
+   but is mounted into the container at `/etc/checkoutly/license-private.pem` — so
+   `LICENSE_PRIVATE_KEY_PATH=/etc/checkoutly/license-private.pem` (the default in
+   `.env.dist`). Using the host path fails: the container has no `/opt/...`.
+
+3. **Use hex-only DB passwords** (`openssl rand -hex 24`). A `@ : / ? #` or `$` in
+   the password breaks `DATABASE_URL` parsing (`Malformed parameter "url"`). The
+   value in `.env` (DB_PASSWORD) and the one embedded in `DATABASE_URL` in
+   `.env.local` must match; changing it after first boot needs the `db_data` volume
+   recreated (MariaDB only reads the password on first init).
+
+Diagnose any of these from inside the container:
+`docker compose -f docker-compose.prod.yml exec app php bin/console debug:dotenv <VAR>`.
+
+---
+
 ## Phase 0 — DNS (do this first, propagation takes time)
 
 At your domain registrar, point the domain at the VPS public IP (`x.x.x.x`):
