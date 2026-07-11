@@ -1,7 +1,7 @@
 name: Deploy to production
 
 # Deploys on every push to main. The VPS holds the clone + secrets; this job
-# just SSHes in and runs the deploy: pull, rebuild the image, restart, migrate.
+# just SSHes in and runs the deploy: sync to origin, rebuild, restart, migrate.
 on:
   push:
     branches: [main]
@@ -42,7 +42,12 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/checkoutly-licensing
-            git pull --ff-only origin main
+            # Force the working tree to exactly match origin/main. Unlike
+            # `git pull`, this also restores any tracked file that drifted or was
+            # deleted on the VPS (e.g. .env.dist). Safe: .env, .env.local,
+            # secrets/, backups/ are gitignored, so real secrets/data are untouched.
+            git fetch origin main
+            git reset --hard origin/main
             docker compose -f docker-compose.prod.yml build
             docker compose -f docker-compose.prod.yml up -d
             docker compose -f docker-compose.prod.yml exec -T app \
