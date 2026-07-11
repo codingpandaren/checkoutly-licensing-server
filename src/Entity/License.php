@@ -182,6 +182,17 @@ class License
         return false;
     }
 
+    /**
+     * Whether the most recent check-in came from a local/development store. Such
+     * stores are always granted access (see grantsAccessTo), so the portal must
+     * not warn about a domain "mismatch" for them - a vendor's localhost dev shop
+     * checking in never means their live license is at risk.
+     */
+    public function isLastSeenLocal(): bool
+    {
+        return $this->lastSeenDomain !== null && self::isLocalDomain($this->lastSeenDomain);
+    }
+
     public function getId(): ?int
     {
         return $this->id;
