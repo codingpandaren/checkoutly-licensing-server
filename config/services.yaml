@@ -26,11 +26,17 @@ services:
             $limits:
                 vat: '%env(int:GATEWAY_QUOTA_VAT)%'
                 places: '%env(int:GATEWAY_QUOTA_PLACES)%'
+                email: '%env(int:GATEWAY_QUOTA_EMAIL)%'
 
     # Dedicated day-long cache pool for VIES results.
     App\Gateway\ViesClient:
         arguments:
             $viesCache: '@cache.vies'
+
+    # Dedicated cache pool for email MX lookups.
+    App\Gateway\EmailVerifier:
+        arguments:
+            $emailCache: '@cache.email'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

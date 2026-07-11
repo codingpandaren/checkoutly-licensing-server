@@ -19,3 +19,6 @@ framework:
             # VIES VAT lookups: public company data, safe to cache for a day (§6).
             cache.vies:
                 default_lifetime: 86400
+            # Email MX/deliverability lookups, cached per domain for a day.
+            cache.email:
+                default_lifetime: 86400
