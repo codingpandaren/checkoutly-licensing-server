@@ -22,6 +22,8 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
+        # Public: health probe for uptime monitoring
+        - { path: ^/health, roles: PUBLIC_ACCESS }
         # Public: login page + OAuth connect/callback routes
         - { path: ^/(login|connect), roles: PUBLIC_ACCESS }
         # Public machine endpoints: module heartbeat + Stripe webhook (own auth)
