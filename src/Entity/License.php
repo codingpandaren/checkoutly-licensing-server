@@ -139,6 +139,17 @@ class License
     }
 
     /**
+     * Entitled independent of domain: paid/trialing and not revoked. The managed
+     * -cron booster pings only entitled licenses (domain matching is enforced
+     * shop-side by the offline license check), so a cracked key gets no free
+     * automatic recovery.
+     */
+    public function isEntitled(): bool
+    {
+        return !$this->revoked && in_array($this->status, self::ENTITLED_STATUSES, true);
+    }
+
+    /**
      * Whether the module should treat the shop as premium for the given domain.
      * This is the single source of truth behind the heartbeat response.
      */

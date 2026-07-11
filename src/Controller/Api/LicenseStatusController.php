@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
+use App\Entity\License;
+use App\Entity\RecoverySchedule;
 use App\Repository\LicenseRepository;
+use App\Repository\RecoveryScheduleRepository;
 use App\Service\DomainNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -30,7 +33,7 @@ class LicenseStatusController extends AbstractController
     }
 
     #[Route('/api/license/status', name: 'api_license_status', methods: ['POST'])]
-    public function status(Request $request, LicenseRepository $licenses, DomainNormalizer $normalizer): JsonResponse
+    public function status(Request $request, LicenseRepository $licenses, DomainNormalizer $normalizer, RecoveryScheduleRepository $schedules): JsonResponse
     {
         $limit = $this->licenseStatusLimiter->create($request->getClientIp())->consume();
         if (!$limit->isAccepted()) {
@@ -61,6 +64,49 @@ class LicenseStatusController extends AbstractController
         $license->setLastSeenAt(new \DateTimeImmutable());
         $licenses->save($license);
 
+        $this->upsertRecovery($license, $payload['recovery'] ?? null, $schedules);
+
         return new JsonResponse(['revoked' => !$license->grantsAccessTo($domain)]);
+    }
+
+    /**
+     * Register/update the managed-cron booster from the heartbeat. The module
+     * sends {enabled, url, token}; we track the callback so app:recovery:tick can
+     * ping it. When the vendor first switches recovery on, schedule an immediate
+     * ping instead of waiting for the interval.
+     */
+    private function upsertRecovery(License $license, mixed $recovery, RecoveryScheduleRepository $schedules): void
+    {
+        if (!is_array($recovery)) {
+            return;
+        }
+
+        $url = trim((string) ($recovery['url'] ?? ''));
+        $token = trim((string) ($recovery['token'] ?? ''));
+        $enabled = (bool) ($recovery['enabled'] ?? false);
+
+        $schedule = $schedules->findOneByLicense($license);
+        if ($schedule === null) {
+            if ($url === '' || $token === '') {
+                return;
+            }
+            $schedule = new RecoverySchedule($license);
+        }
+
+        $wasEnabled = $schedule->isEnabled();
+        $schedule->setEnabled($enabled);
+        if ($url !== '') {
+            $schedule->setCallbackUrl($url);
+        }
+        if ($token !== '') {
+            $schedule->setCallbackToken($token);
+        }
+
+        if ($enabled && (!$wasEnabled || $schedule->getNextDueAt() === null)) {
+            $schedule->setNextDueAt(new \DateTimeImmutable());
+            $schedule->setConsecutiveFailures(0);
+        }
+
+        $schedules->save($schedule);
     }
 }

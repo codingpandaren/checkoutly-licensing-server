@@ -229,6 +229,26 @@ $ ./deploy/backup.sh    # test once → backups/licensing_*.sql.gz
 
 ---
 
+## Phase 7b — Recovery scheduler (managed-cron booster)
+
+The module's abandoned-cart recovery runs itself from shop traffic (web-cron),
+so most stores need nothing here. This cron is the **booster** that pings
+low-traffic shops so their reminders still fire on time. It reads the
+`recovery_schedule` table (populated automatically from the license heartbeat)
+and calls each due, entitled shop's `recoverycron` endpoint. A blocked or slow
+ping is harmless — the shop's own web-cron already covers it.
+
+```bash
+# every 5 minutes; interval/backoff is handled inside the command
+$ ( crontab -l 2>/dev/null; echo '*/5 * * * * cd /opt/checkoutly-licensing && docker compose -f docker-compose.prod.yml exec -T app php bin/console app:recovery:tick >> /var/log/checkoutly-recovery.log 2>&1' ) | crontab -
+$ docker compose -f docker-compose.prod.yml exec -T app php bin/console app:recovery:tick   # test once
+```
+
+The `recovery_schedule` table is created by the migration that ships with this
+change; the auto-deploy runs `doctrine:migrations:migrate`, so no manual DB step.
+
+---
+
 ## Phase 8 — Point the module at production
 
 The module reaches the gateway via `CHECKOUTLY_GATEWAY_URL` (and the revocation
