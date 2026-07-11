@@ -19,5 +19,18 @@ services:
     App\:
         resource: '../src/'
 
+    # API gateway: per-feature monthly quota limits (0 = unlimited). Trial is an
+    # entitled state, so it shares the paid limit for now (open question §12).
+    App\Gateway\ApiQuota:
+        arguments:
+            $limits:
+                vat: '%env(int:GATEWAY_QUOTA_VAT)%'
+                places: '%env(int:GATEWAY_QUOTA_PLACES)%'
+
+    # Dedicated day-long cache pool for VIES results.
+    App\Gateway\ViesClient:
+        arguments:
+            $viesCache: '@cache.vies'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

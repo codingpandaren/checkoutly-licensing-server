@@ -223,9 +223,56 @@ transit our server.
 - **Phase A — VIES VAT (zero cost, proves the pipe):** gateway `/api/v1` skeleton,
   bearer auth + license/domain/quota checks, `api_usage` table, `/vat/validate`;
   module `GatewayClient` + `apiproxy` controller + VAT field integration + fallback.
+  - **Server side — BUILT & verified 2026-07-11.** `LicenseKeyVerifier` (stateless
+    RSA verify, public key derived from the signing key), `ApiUsage` entity + repo +
+    migration, `ApiQuota` (check-then-record), `GatewayAuthenticator` +
+    `GatewayException` + `GatewayResult`, `AbstractGatewayController`, `ViesClient`
+    (24h cache pool `cache.vies`, service-fault codes not cached), `VatController`
+    `POST /api/v1/vat/validate`. Rate limiter `gateway_api` (120/min/IP), quota via
+    `GATEWAY_QUOTA_*`. E2E verified: 401 no-auth, 403 domain-mismatch, 200 live+cached,
+    400 bad-input, quota increments only on billable success.
+    - ⚠️ **VIES REST field is `isValid`, not `valid`** — and `userError` fault codes
+      (`MS_UNAVAILABLE`, `TIMEOUT`, …) mean "service down", not "invalid VAT"; never
+      cache those. Both handled in `ViesClient`.
+  - **Module side — BUILT & verified 2026-07-11.** `Checkoutly\Api\GatewayClient`
+    (bearer + `X-Checkoutly-Domain`, 3s timeout, soft-fail, normalized envelope;
+    base URL from `CHECKOUTLY_GATEWAY_URL` override, empty until hosted),
+    `Checkoutly\Checkout\VatService` (premium + toggle + gateway-configured gate;
+    resolves ISO from `id_country`; EU-only; advisory, never blocks), `vatValidate`
+    action added to the existing token-protected `ajax.php` (reused instead of a
+    separate `apiproxy` controller — same browser→module hop, no boilerplate dup),
+    `FeatureGate::VAT_VALIDATION`, front JS validates the existing `vat_number`
+    field on blur with a ✓/! status line, `CHECKOUTLY_VAT_VALIDATION` toggle +
+    upgrade-0.1.27 + version 0.1.27. cs-fixer + phpstan clean.
+    - E2E verified in PS9 container: `isEnabled` true with a valid license,
+      `IE6388047V` → valid + "GOOGLE IRELAND LIMITED", invalid LT number → not
+      valid, non-EU → skipped (no gateway call), quota metered per call.
+    - **Degradation matrix implemented minimally:** any non-ok gateway response
+      (401/403/429/5xx/unreachable) → `checked:false`, JS shows no verdict (fail
+      open). Not yet built: BO notice on 401/403/429 (§11), and VAT validation is
+      currently advisory only — enforcing valid VAT for B2B exemption is a separate
+      product decision.
+    - **Dev wiring:** in the compose stack the gateway is reachable from the PS
+      container at `http://licensing`; `CHECKOUTLY_GATEWAY_URL` is set to that in the
+      PS9 dev DB. VAT/company fields only render when PrestaShop B2B mode is on.
 - **Phase B — Google Places (marquee):** session tokens, `/places/autocomplete` +
   `/places/details`, module autocomplete widget with debounce/min-length, quota + cost
   controls.
+  - **BUILT & verified 2026-07-11.** Server: `GooglePlacesClient` (Google Places API
+    (New), OUR key via `GOOGLE_PLACES_API_KEY`, session token forwarded on both calls,
+    normalized PS-agnostic output, predictions never cached per TOS), `PlacesController`
+    `/places/autocomplete` (billable:false) + `/places/details` (billable:true) — quota
+    meters only the completed session, aligning with Google's session billing.
+    Module: `PlacesService` refactored off the merchant's own Google key onto
+    `GatewayClient`; PS country/state id resolution kept local. The merchant "Google
+    Places API key" field was removed from settings (zero-setup is now real); the
+    existing autocomplete widget/ajax/JS were already in place and unchanged.
+    - E2E with a real Google key: `1600 Amphitheatre Pkwy` → 3 predictions
+      (autocomplete, not billed), details → `{address1, city, postcode 94043,
+      countryCode US, California}`, resolved in-module to `id_country=21, id_state=8`.
+      Quota went 0→1 (details only). cs-fixer + phpstan clean both sides.
+    - Not yet done: client-side min-length/debounce already existed (250ms, ≥3 chars);
+      per-tier quota numbers still placeholder (§12); no BO degradation notice yet.
 - **Phase C — more:** email/phone validation, currency/geo, as economics allow.
 
 ## 14. PrestaShop Addons marketplace compatibility (researched 2026-07-11)

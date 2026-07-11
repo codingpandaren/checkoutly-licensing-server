@@ -15,5 +15,7 @@ framework:
         #app: cache.adapter.apcu
 
         # Namespaced pools use the above "app" backend by default
-        #pools:
-            #my.dedicated.cache: null
+        pools:
+            # VIES VAT lookups: public company data, safe to cache for a day (§6).
+            cache.vies:
+                default_lifetime: 86400

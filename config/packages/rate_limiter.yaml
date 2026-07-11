@@ -7,3 +7,10 @@ framework:
             policy: 'sliding_window'
             limit: 60
             interval: '1 minute'
+        # API gateway (/api/v1). Per-IP brute-force / key-enumeration guard, not a
+        # per-license quota (that is metered separately in api_usage). Sized to sit
+        # above a busy shop's autocomplete traffic while still capping abuse.
+        gateway_api:
+            policy: 'sliding_window'
+            limit: 120
+            interval: '1 minute'
