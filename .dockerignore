@@ -1,0 +1,23 @@
+.git
+.github
+.gitignore
+.gitattributes
+.editorconfig
+
+# Rebuilt inside the image.
+vendor/
+var/
+
+# Never bake secrets into the image — they're mounted at runtime.
+.env
+.env.local
+.env.*.local
+secrets/
+backups/
+
+# Local/dev-only compose.
+compose.yaml
+compose.override.yaml
+
+docs/
+tests/

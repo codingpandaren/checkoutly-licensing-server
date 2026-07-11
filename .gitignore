@@ -11,3 +11,10 @@
 /var/
 /vendor/
 ###< symfony/framework-bundle ###
+
+###> checkoutly deploy (VPS-only, never commit) ###
+# Signing key + any other mounted secrets.
+/secrets/
+# Nightly DB dumps.
+/backups/
+###< checkoutly deploy ###

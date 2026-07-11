@@ -1,0 +1,52 @@
+# Production stack for checkoutly.app. Run on the VPS:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Reads DB_* / ACME_EMAIL from a sibling `.env` (see .env.deploy.example) and
+# app secrets from `.env.local` (see .env.prod.example), neither committed.
+
+services:
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: 0
+      # Caddy provisions TLS for each hostname listed here.
+      SERVER_NAME: "checkoutly.app www.checkoutly.app"
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      # Secrets, mounted read-only — never baked into the image.
+      - ./.env.local:/app/.env.local:ro
+      - ./secrets/license-private.pem:/etc/checkoutly/license-private.pem:ro
+      # Persist the Caddy cert store across restarts (avoids Let's Encrypt rate limits).
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

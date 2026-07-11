@@ -1,0 +1,52 @@
+name: Deploy to production
+
+# Deploys on every push to main. The VPS holds the clone + secrets; this job
+# just SSHes in and runs the deploy: pull, rebuild the image, restart, migrate.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never run two deploys at once; let an in-flight one finish.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Until the VPS secrets are configured, skip the deploy so the run stays
+      # green instead of failing. Remove nothing — just add the secrets.
+      - name: Check deploy is configured
+        id: check
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          if [ -z "$VPS_HOST" ]; then
+            echo "VPS secrets not set yet — skipping deploy."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy over SSH
+        if: steps.check.outputs.ready == 'true'
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          command_timeout: "20m"
+          script: |
+            set -euo pipefail
+            cd /opt/checkoutly-licensing
+            git pull --ff-only origin main
+            docker compose -f docker-compose.prod.yml build
+            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml exec -T app \
+              php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+            docker compose -f docker-compose.prod.yml exec -T app \
+              php bin/console cache:clear
+            docker image prune -f

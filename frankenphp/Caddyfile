@@ -1,0 +1,30 @@
+{
+	# FrankenPHP global config.
+	frankenphp
+	order php_server before file_server
+	# Email Let's Encrypt uses for expiry notices. Set ACME_EMAIL in the env;
+	# the default keeps the config valid when it is unset (e.g. local runs).
+	email {$ACME_EMAIL:admin@checkoutly.app}
+}
+
+# SERVER_NAME is provided by the environment (e.g. "checkoutly.app www.checkoutly.app").
+# Caddy provisions a TLS cert for each hostname automatically.
+{$SERVER_NAME} {
+	root * /app/public
+	encode zstd gzip
+
+	# Canonical host: send www → apex.
+	@www host www.checkoutly.app
+	redir @www https://checkoutly.app{uri} permanent
+
+	php_server
+
+	# Long-cache hashed assets.
+	@static path *.css *.js *.woff2 *.svg *.png *.jpg *.webp
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	log {
+		output stdout
+		format console
+	}
+}
