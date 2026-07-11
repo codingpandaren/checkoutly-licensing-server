@@ -38,6 +38,18 @@
     "knpuniversity/oauth2-client-bundle": {
         "version": "v2.20.2"
     },
+    "sentry/sentry-symfony": {
+        "version": "5.10",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "5.0",
+            "ref": "aac2bc5220e9ab5b9e3838a7a4da90e7f74e6148"
+        },
+        "files": [
+            "config/packages/sentry.yaml"
+        ]
+    },
     "stripe/stripe-php": {
         "version": "v20.3.1"
     },
