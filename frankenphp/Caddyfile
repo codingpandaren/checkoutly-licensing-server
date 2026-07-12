@@ -28,3 +28,24 @@
 		format console
 	}
 }
+
+# Public demo store (separate stack: checkoutly-prestashop-demo). This Caddy
+# owns 80/443 on the host, so it terminates TLS for the demo and reverse-proxies
+# to the demo's PrestaShop container over the shared "checkoutly-edge" network.
+# The demo container joins that network with the alias "demo-prestashop".
+demo.checkoutly.app {
+	encode zstd gzip
+
+	# Keep the demo out of search results.
+	header X-Robots-Tag "noindex, nofollow, noarchive"
+
+	reverse_proxy demo-prestashop:80 {
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Port 443
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
