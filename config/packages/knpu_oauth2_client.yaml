@@ -14,3 +14,12 @@ knpu_oauth2_client:
             redirect_route: connect_facebook_check
             redirect_params: {}
             graph_api_version: v21.0
+
+        apple:
+            type: apple
+            client_id: '%env(OAUTH_APPLE_SERVICES_ID)%'
+            team_id: '%env(OAUTH_APPLE_TEAM_ID)%'
+            key_file_id: '%env(OAUTH_APPLE_KEY_ID)%'
+            key_file_path: '%env(OAUTH_APPLE_KEY_PATH)%'
+            redirect_route: connect_apple_check
+            redirect_params: {}

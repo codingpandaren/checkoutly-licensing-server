@@ -8,6 +8,18 @@ framework:
     #esi: true
     #fragments: true
 
+when@prod:
+    framework:
+        session:
+            # Sign in with Apple returns via a cross-site POST; a SameSite=Lax
+            # cookie is not sent on it, so the OAuth state (kept in the session)
+            # would be lost. None+Secure lets the session ride the callback.
+            # Safe here: prod is HTTPS-only and state-changing forms are protected
+            # by Symfony CSRF tokens. Only applied in prod so local HTTP dev keeps
+            # a Lax (Secure-free) cookie that browsers accept.
+            cookie_samesite: none
+            cookie_secure: true
+
 when@test:
     framework:
         test: true

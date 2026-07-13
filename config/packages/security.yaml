@@ -16,6 +16,7 @@ security:
             custom_authenticators:
                 - App\Security\GoogleAuthenticator
                 - App\Security\FacebookAuthenticator
+                - App\Security\AppleAuthenticator
             logout:
                 path: app_logout
                 target: app_login

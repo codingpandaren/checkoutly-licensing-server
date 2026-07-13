@@ -212,10 +212,32 @@ cache clear. Trigger a no-op run any time from Actions → *Deploy to production
 - **Stripe** (live mode) → Developers → Webhooks → add endpoint
   `https://checkoutly.app/webhook/stripe`; copy the signing secret into
   `STRIPE_WEBHOOK_SECRET` in `.env.local`, then `docker compose ... up -d` to reload.
+  The portal (login + `/connect/*`) is served on **`dashboard.checkoutly.app`**
+  (see `frankenphp/Caddyfile`), so every OAuth redirect URI below uses that host.
 - **Google OAuth** console → Authorized redirect URI
-  `https://checkoutly.app/connect/google/check`.
+  `https://dashboard.checkoutly.app/connect/google/check`.
 - **Facebook Login** → Valid OAuth redirect URI
-  `https://checkoutly.app/connect/facebook/check`.
+  `https://dashboard.checkoutly.app/connect/facebook/check`.
+- **Sign in with Apple** (Apple Developer portal):
+  1. **Identifiers → App IDs**: create an App ID with the *Sign In with Apple*
+     capability enabled (the primary identifier the Services ID hangs off).
+  2. **Identifiers → Services IDs**: create one (e.g. `app.checkoutly.dashboard`).
+     Its identifier is the client id → `OAUTH_APPLE_SERVICES_ID`. Configure it:
+     Domain = `dashboard.checkoutly.app`, Return URL =
+     `https://dashboard.checkoutly.app/connect/apple/check` (query-string-free,
+     HTTPS, no localhost). Verify the domain when Apple prompts.
+  3. **Keys**: create a *Sign In with Apple* key, download the `.p8` (one-time),
+     note its **Key ID** → `OAUTH_APPLE_KEY_ID`. **Team ID** (Membership) →
+     `OAUTH_APPLE_TEAM_ID`.
+  4. Put the `.p8` at `./secrets/AuthKey_<KEYID>.p8` on the host (gitignored, like
+     the license key; `chmod 600`), set the four `OAUTH_APPLE_*` vars in `.env.local`
+     with `OAUTH_APPLE_KEY_PATH=/etc/checkoutly/AuthKey_<KEYID>.p8`, and make sure
+     the matching read-only mount is present in `docker-compose.prod.yml`, then
+     redeploy. The mount source must exist on the host or the container won't start.
+  5. Note: the app's session cookie is set `SameSite=None; Secure` in prod
+     (`config/packages/framework.yaml`, `when@prod`) — Apple's callback is a
+     cross-site POST that a `Lax` cookie would drop mid-flow. HTTPS-only + CSRF
+     tokens keep this safe; Google/Facebook are unaffected.
 
 ---
 

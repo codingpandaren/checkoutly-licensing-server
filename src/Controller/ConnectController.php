@@ -36,4 +36,19 @@ class ConnectController extends AbstractController
     public function facebookCheck(): void
     {
     }
+
+    #[Route('/connect/apple', name: 'connect_apple', methods: ['GET'])]
+    public function apple(ClientRegistry $clientRegistry): RedirectResponse
+    {
+        return $clientRegistry->getClient('apple')->redirect(['name', 'email'], []);
+    }
+
+    /**
+     * Apple returns the callback as a form_post (cross-site POST), so this route
+     * accepts POST as well as GET - unlike the Google/Facebook GET redirects.
+     */
+    #[Route('/connect/apple/check', name: 'connect_apple_check', methods: ['GET', 'POST'])]
+    public function appleCheck(): void
+    {
+    }
 }

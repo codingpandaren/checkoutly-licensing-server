@@ -22,6 +22,9 @@ services:
       # Secrets, mounted read-only — never baked into the image.
       - ./.env.local:/app/.env.local:ro
       - ./secrets/license-private.pem:/etc/checkoutly/license-private.pem:ro
+      # Sign in with Apple signing key (see DEPLOY.md), mounted read-only.
+      # Must exist at ./secrets/ on the host or the container fails to start.
+      - ./secrets/AuthKey_4B93B6546L.p8:/etc/checkoutly/AuthKey_4B93B6546L.p8:ro
       # Persist the Caddy cert store across restarts (avoids Let's Encrypt rate limits).
       - caddy_data:/data
       - caddy_config:/config
