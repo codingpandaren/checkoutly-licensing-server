@@ -7,15 +7,48 @@
 	email {$ACME_EMAIL:admin@checkoutly.app}
 }
 
-# SERVER_NAME is provided by the environment (e.g. "checkoutly.app www.checkoutly.app").
-# Caddy provisions a TLS cert for each hostname automatically.
-{$SERVER_NAME} {
-	root * /app/public
+# ---------------------------------------------------------------------------
+# checkoutly.app  ->  marketing site (static), EXCEPT the machine endpoints.
+# ---------------------------------------------------------------------------
+# The apex serves the public marketing site (a separate "marketing" nginx
+# container on the shared "checkoutly-edge" network). But installed modules call
+# https://checkoutly.app/api/license/status by default, and Stripe posts to
+# /webhook/*, so those paths MUST keep hitting this licensing app. They are
+# served here; everything else is reverse-proxied to the marketing container.
+www.checkoutly.app {
+	redir https://checkoutly.app{uri} permanent
+}
+
+checkoutly.app {
 	encode zstd gzip
 
-	# Canonical host: send www → apex.
-	@www host www.checkoutly.app
-	redir @www https://checkoutly.app{uri} permanent
+	# License API + gateway, and Stripe webhooks: served by this app.
+	handle /api/* {
+		root * /app/public
+		php_server
+	}
+	handle /webhook/* {
+		root * /app/public
+		php_server
+	}
+
+	# Everything else: the static marketing site.
+	handle {
+		reverse_proxy marketing:80
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+# ---------------------------------------------------------------------------
+# dashboard.checkoutly.app  ->  the licensing portal / dashboard (this app).
+# ---------------------------------------------------------------------------
+dashboard.checkoutly.app {
+	root * /app/public
+	encode zstd gzip
 
 	php_server
 
@@ -29,10 +62,11 @@
 	}
 }
 
-# Public demo store (separate stack: checkoutly-prestashop-demo). This Caddy
-# owns 80/443 on the host, so it terminates TLS for the demo and reverse-proxies
-# to the demo's PrestaShop container over the shared "checkoutly-edge" network.
-# The demo container joins that network with the alias "demo-prestashop".
+# ---------------------------------------------------------------------------
+# demo.checkoutly.app  ->  public demo store (separate stack). Unchanged.
+# ---------------------------------------------------------------------------
+# This Caddy owns 80/443 on the host, so it terminates TLS for the demo and
+# reverse-proxies to the demo's PrestaShop container over "checkoutly-edge".
 demo.checkoutly.app {
 	encode zstd gzip
 
