@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="facebook-domain-verification" content="fiii97ms9ki488ugks7rzmm19qm3pd" />
-    <title>{% block title %}Checkoutly Licensing{% endblock %}</title>
+    <title>{% block title %}Checkoutly{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     {% block stylesheets %}
         <style>
@@ -20,7 +20,7 @@
             .topbar { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; background:var(--card); border-bottom:1px solid var(--line); }
             .topbar__brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; letter-spacing:-.01em; text-decoration:none; }
             .topbar__brand:hover { text-decoration:none; }
-            .topbar__brand img { width:30px; height:30px; display:block; }
+            .topbar__brand img { height:26px; width:auto; display:block; }
             .topbar__brand span { color:var(--accent); }
             .topbar__user { display:flex; align-items:center; gap:14px; font-size:13.5px; color:var(--muted); }
             .container { max-width:960px; margin:0 auto; padding:36px 24px; }
@@ -41,22 +41,29 @@
             .pill--warn { background:#fffbeb; color:#b45309; }
             .pill--bad { background:#fef2f2; color:var(--danger); }
             .pill--mute { background:#f1f5f9; color:var(--muted); }
+            @media (max-width:560px) {
+                .topbar { padding:10px 14px; gap:12px; }
+                .topbar__brand img { height:22px; }
+                .topbar__user { gap:10px; font-size:13px; }
+                .container { padding:24px 16px; }
+            }
         </style>
     {% endblock %}
     {% block javascripts %}{% endblock %}
 </head>
 <body>
     <header class="topbar">
-        <a class="topbar__brand" href="{{ path('app_dashboard') }}" style="color:inherit;">
-            <img src="{{ asset('logo.png') }}" alt="Checkoutly">
-            Checkoutly <span>Licensing</span>
+        <a class="topbar__brand" href="{{ path('app_dashboard') }}" aria-label="Checkoutly">
+            <img src="{{ asset('logo-full.png') }}" alt="Checkoutly">
         </a>
-        {% if app.user %}
-            <div class="topbar__user">
-                <span>Signed in as <strong>{{ app.user.email }}</strong></span>
-                <a href="{{ path('app_logout') }}">Sign out</a>
-            </div>
-        {% endif %}
+        {% block topbar_actions %}
+            {% if app.user %}
+                <div class="topbar__user">
+                    <span>Signed in as <strong>{{ app.user.email }}</strong></span>
+                    <a href="{{ path('app_logout') }}">Sign out</a>
+                </div>
+            {% endif %}
+        {% endblock %}
     </header>
 
     <main class="container">
