@@ -73,9 +73,32 @@ demo.checkoutly.app {
 	# Keep the demo out of search results.
 	header X-Robots-Tag "noindex, nofollow, noarchive"
 
-	reverse_proxy demo-prestashop:80 {
-		header_up X-Forwarded-Proto https
-		header_up X-Forwarded-Port 443
+	# ClaudeBot crawls the combinatorial faceted-search (?q=) URL space and
+	# saturates PrestaShop's Apache workers + the MariaDB connection pool
+	# (max_connections=151), pegging the demo DB. The demo needs no crawling,
+	# so refuse it outright. Human visitors keep full faceted navigation.
+	@claudebot header User-Agent *ClaudeBot*
+	handle @claudebot {
+		respond 403
+	}
+
+	# Serve our own robots.txt: block the ?q= filter-crawl vector for every
+	# crawler, and keep ClaudeBot off entirely.
+	handle /robots.txt {
+		header Content-Type text/plain
+		respond `User-agent: ClaudeBot
+Disallow: /
+
+User-agent: *
+Disallow: /*?q=
+` 200
+	}
+
+	handle {
+		reverse_proxy demo-prestashop:80 {
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Port 443
+		}
 	}
 
 	log {
