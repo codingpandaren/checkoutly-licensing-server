@@ -73,20 +73,24 @@ demo.checkoutly.app {
 	# Keep the demo out of search results.
 	header X-Robots-Tag "noindex, nofollow, noarchive"
 
-	# ClaudeBot crawls the combinatorial faceted-search (?q=) URL space and
-	# saturates PrestaShop's Apache workers + the MariaDB connection pool
-	# (max_connections=151), pegging the demo DB. The demo needs no crawling,
-	# so refuse it outright. Human visitors keep full faceted navigation.
-	@claudebot header User-Agent *ClaudeBot*
-	handle @claudebot {
+	# Anthropic runs several crawlers (ClaudeBot, Claude-SearchBot, Claude-User),
+	# and other AI bots crawl the combinatorial faceted-search (?q=) URL space,
+	# which saturates PrestaShop's Apache workers and the MariaDB pool and pegs
+	# the demo DB. The demo is noindex and needs no crawling, so refuse them
+	# outright. Human visitors keep full faceted navigation.
+	@badbots header_regexp User-Agent (?i)(Claude|GPTBot|CCBot|Bytespider|Amazonbot|meta-externalagent|ChatGPT|PerplexityBot|anthropic)
+	handle @badbots {
 		respond 403
 	}
 
-	# Serve our own robots.txt: block the ?q= filter-crawl vector for every
-	# crawler, and keep ClaudeBot off entirely.
+	# Serve our own robots.txt: keep the AI crawlers off entirely and block the
+	# ?q= filter-crawl vector for every crawler.
 	handle /robots.txt {
 		header Content-Type text/plain
 		respond `User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-SearchBot
 Disallow: /
 
 User-agent: *
