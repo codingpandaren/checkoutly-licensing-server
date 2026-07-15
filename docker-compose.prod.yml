@@ -52,6 +52,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+    networks:
+      # Own stack network (app <-> db).
+      default: {}
+      # Private link so the CMS container can read this DB without the DB
+      # sitting on the public edge network next to the demo PrestaShop.
+      data:
+        aliases:
+          - licensing-db
 
 volumes:
   db_data:
@@ -60,7 +68,12 @@ volumes:
 
 networks:
   # Created once on the VPS: `docker network create checkoutly-edge`.
-  # Lets this Caddy reach the demo stack's PrestaShop container.
+  # Lets this Caddy reach the demo + CMS stacks' containers.
   edge:
     external: true
     name: checkoutly-edge
+  # Created once on the VPS: `docker network create checkoutly-data`.
+  # Private DB link shared only with the CMS (reads this DB as `licensing-db`).
+  data:
+    external: true
+    name: checkoutly-data

@@ -48,8 +48,11 @@ jobs:
             # secrets/, backups/ are gitignored, so real secrets/data are untouched.
             git fetch origin main
             git reset --hard origin/main
-            # Shared network used to reach the demo stack's PrestaShop container.
+            # Shared edge net (reaches the demo + CMS containers) and the
+            # private data net (the CMS reads this DB over it). Both are
+            # `external` in compose, so they must exist before `up`.
             docker network create checkoutly-edge 2>/dev/null || true
+            docker network create checkoutly-data 2>/dev/null || true
             docker compose -f docker-compose.prod.yml build
             docker compose -f docker-compose.prod.yml up -d
             docker compose -f docker-compose.prod.yml exec -T app \
