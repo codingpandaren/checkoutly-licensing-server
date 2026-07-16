@@ -36,6 +36,7 @@ class DownloadController extends AbstractController
     public function __construct(
         #[Autowire('%kernel.secret%')]
         private readonly string $secret,
+        #[Autowire(service: 'limiter.download')]
         private readonly RateLimiterFactory $downloadLimiter,
         private readonly HttpClientInterface $httpClient,
         private readonly LoggerInterface $logger,
