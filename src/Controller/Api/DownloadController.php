@@ -47,7 +47,11 @@ class DownloadController extends AbstractController
     public function download(Request $request, DownloadRepository $downloads): Response
     {
         $ua = (string) $request->headers->get('user-agent', '');
-        $ip = (string) $request->getClientIp();
+        // The apex is fronted by Cloudflare, so the connecting address is a CF
+        // edge IP; the real visitor is in CF-Connecting-IP. Keying the rate
+        // limit (and the stats hash) on that avoids lumping every visitor behind
+        // one PoP into a single bucket. Falls back to the peer IP off Cloudflare.
+        $ip = (string) ($request->headers->get('cf-connecting-ip') ?? $request->getClientIp() ?? '');
 
         // 1. Reject obvious non-browser clients. Cheap, and it clears out the
         //    bulk of the scripted-curl noise before anything heavier runs. A 404
@@ -111,6 +115,8 @@ class DownloadController extends AbstractController
             $response->headers->set('Content-Length', $length);
         }
         $response->headers->set('X-Robots-Tag', 'noindex');
+        // Per-visitor stream: never let Cloudflare or any proxy cache it.
+        $response->headers->set('Cache-Control', 'private, no-store');
 
         return $response;
     }
