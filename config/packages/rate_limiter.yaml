@@ -14,3 +14,11 @@ framework:
             policy: 'sliding_window'
             limit: 120
             interval: '1 minute'
+        # Public module download. A human grabs the zip a handful of times at
+        # most, so this per-IP ceiling only ever bites a client hammering the
+        # link. The apex is origin-direct (no Cloudflare in front), so the key
+        # is the real visitor IP rather than a shared proxy address.
+        download:
+            policy: 'sliding_window'
+            limit: 20
+            interval: '10 minutes'

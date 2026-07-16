@@ -32,6 +32,15 @@ checkoutly.app {
 		php_server
 	}
 
+	# The zip has no public URL. Downloads must go through /api/download, which
+	# bot-filters, rate limits and counts, then streams the file from the
+	# marketing container over the private network. Blocking the static path
+	# here closes the "just curl the zip directly" bypass.
+	@zip path /downloads/*.zip
+	handle @zip {
+		respond 404
+	}
+
 	# Everything else: the static marketing site.
 	handle {
 		reverse_proxy marketing:80
